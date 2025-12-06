@@ -1,0 +1,56 @@
+{
+  "name": "bitig",
+  "version": "0.0.1",
+  "description": "Fullstack Monorepo (Next.js + NestJS + Turborepo + PNPM)",
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "dev": "turbo run dev",
+    "dev:shared": "turbo run dev --filter ./packages/shared",
+    "dev:api": "turbo run dev --filter api",
+    "dev:web": "turbo run dev --filter web",
+    "build": "turbo run build",
+    "build:shared": "turbo run build --filter ./packages/shared",
+    "build:api": "turbo run build --filter api",
+    "build:web": "turbo run build --filter web",
+    "lint": "turbo run lint",
+    "lint:shared": "turbo run lint --filter ./packages/shared",
+    "lint:api": "turbo run lint --filter api",
+    "lint:web": "turbo run lint --filter web",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "test": "turbo run test",
+    "clean": "rimraf node_modules || true && rimraf \"apps/*/node_modules\" || true && rimraf \"packages/*/node_modules\" || true && rimraf .turbo || true",
+    "prepare": "husky",
+    "husky:add": "husky add"
+  },
+  "keywords": [],
+  "author": "Alpha DIOP",
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@10.24.0",
+  "devDependencies": {
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.3",
+    "prettier-plugin-tailwindcss": "^0.7.1",
+    "rimraf": "^6.1.2",
+    "turbo": "^2.6.1"
+  },
+  "lint-staged": {
+    "apps/web/**/*.{js,jsx,ts,tsx}": [
+      "pnpm --filter web eslint --fix"
+    ],
+    "apps/api/**/*.{ts}": [
+      "pnpm --filter api eslint --fix"
+    ],
+    "packages/shared/**/*.{ts}": [
+      "pnpm --filter ./packages/shared eslint . --ext .ts --fix"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  }
+}

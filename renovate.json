@@ -1,0 +1,45 @@
+{
+  "extends": ["config:base", "group:monorepos", "schedule:earlyMondays"],
+  "baseBranches": ["main"],
+  "timezone": "UTC",
+  "semanticCommitScope": "deps",
+  "rangeStrategy": "bump",
+  "rebaseWhen": "auto",
+  "prConcurrentLimit": 5,
+  "labels": ["dependencies", "renovate"],
+  "automerge": false,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["every weekend"],
+    "dependencyDashboard": false,
+    "automerge": true,
+    "labels": ["lockfile"]
+  },
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true,
+      "groupName": "non-major dependencies"
+    },
+    {
+      "matchPackagePatterns": [
+        "eslint",
+        "prettier",
+        "typescript",
+        "turbo",
+        "jest",
+        "ts-node"
+      ],
+      "groupName": "dev tooling",
+      "automerge": true,
+      "schedule": ["after 3am every weekend"]
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "groupName": "major updates",
+      "automerge": false
+    }
+  ],
+  "prHourlyLimit": 2,
+  "schedule": ["at weekend"]
+}

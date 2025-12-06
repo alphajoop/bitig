@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.filter.outputs.apps_web == 'true' || steps.filter.outputs.packages_shared == 'true' || steps.filter.outputs.apps_api == 'true' }}
+      web_changed: ${{ steps.filter.outputs.apps_web == 'true' }}
+      api_changed: ${{ steps.filter.outputs.apps_api == 'true' }}
+      shared_changed: ${{ steps.filter.outputs.packages_shared == 'true' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v47
+        with:
+          files: |
+            apps/web/**
+            apps/api/**
+            packages/shared/**
+
+      - name: Filter changed files
+        id: filter
+        run: |
+          echo "apps_web=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -q 'apps/web/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "apps_api=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -q 'apps/api/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "packages_shared=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -q 'packages/shared/' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+
+  build:
+    needs: check-changes
+    if: needs.check-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    env:
+      TURBO_FORCE: false
+      TURBO_RUN_SUMMARY: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.24.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Turbo Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .turbo
+            node_modules/.cache
+          key: ${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-
+
+      - name: Build shared package
+        if: needs.check-changes.outputs.shared_changed == 'true'
+        run: pnpm --filter @bitig/shared build
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Build API
+        if: needs.check-changes.outputs.api_changed == 'true' || needs.check-changes.outputs.shared_changed == 'true'
+        run: pnpm --filter api build
+
+      - name: Build Web
+        if: needs.check-changes.outputs.web_changed == 'true' || needs.check-changes.outputs.shared_changed == 'true'
+        run: pnpm --filter web build
+
+  skip-build:
+    needs: check-changes
+    if: needs.check-changes.outputs.has_changes != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip build
+        run: echo "No changes detected in web, api or shared packages. Skipping build."
