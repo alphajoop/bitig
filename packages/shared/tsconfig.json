@@ -3,6 +3,8 @@
     "declaration": true,
     "declarationMap": true,
     "outDir": "dist",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
     "target": "ES2023",
     "rootDir": "src",
     "composite": true,
